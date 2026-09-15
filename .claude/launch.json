@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cosmos",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "website", "exec", "--", "vite", "--port", "3001", "--strictPort"],
+      "port": 3001
+    }
+  ]
+}
