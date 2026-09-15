@@ -1,13 +1,18 @@
 # Render Blueprint — https://render.com/docs/blueprint-spec
-# Deploys the marketing site in website/ as a static site.
-# The rest of the repo (Cosmos source) is not built by this blueprint.
+#
+# Deploys the marketing site in website/ as a static site. The rest of the
+# repo (Cosmos source) is untouched by this blueprint.
+#
+# Note: rootDir is deliberately NOT set. Render's blueprint spec and monorepo
+# docs disagree on whether staticPublishPath is relative to the repo root or
+# to rootDir. Keeping the repo root as the root directory and spelling both
+# paths out in full means the config is correct under either reading.
 services:
   - type: web
     name: cosmos-website
     runtime: static
-    rootDir: website
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
+    buildCommand: cd website && npm ci && npm run build
+    staticPublishPath: website/dist
     pullRequestPreviewsEnabled: false
     routes:
       # Single-page app: serve index.html for any unmatched path

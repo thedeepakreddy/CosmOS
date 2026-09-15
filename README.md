@@ -32,8 +32,13 @@ See [website/README.md](website/README.md) for the design system.
 
 The site deploys to Render from `render.yaml` at this repo's root:
 
-- **Root directory** `website`
-- **Build** `npm ci && npm run build`
-- **Publish** `dist`
+- **Build** `cd website && npm ci && npm run build`
+- **Publish directory** `website/dist`
 
-Pushing to `main` triggers a deploy.
+Render's Root Directory is left at the repo root on purpose — Render's
+blueprint and monorepo docs disagree on whether `staticPublishPath` resolves
+against the repo root or against `rootDir`, so both paths are spelled out in
+full instead.
+
+Pushing to `main` triggers a deploy. Adding Cosmos source elsewhere in the repo
+does not affect the site build.
