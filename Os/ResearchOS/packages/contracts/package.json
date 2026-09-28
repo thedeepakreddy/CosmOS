@@ -1,0 +1,26 @@
+{
+  "name": "@research-os/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Domain model, event, agent and API schemas. The stable surface every client codes against.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@research-os/shared": "*",
+    "zod": "^4.6.5"
+  }
+}

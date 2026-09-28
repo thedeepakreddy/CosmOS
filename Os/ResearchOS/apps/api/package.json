@@ -1,0 +1,28 @@
+{
+  "name": "@research-os/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "HTTP API + SSE stream. The only network surface.",
+  "main": "./dist/main.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@research-os/shared": "*",
+    "@research-os/contracts": "*",
+    "@research-os/observability": "*",
+    "@research-os/events": "*",
+    "@research-os/research-core": "*",
+    "@research-os/model-router": "*",
+    "@research-os/knowledge-graph": "*",
+    "@research-os/sdk": "*",
+    "fastify": "^5.12.4",
+    "@fastify/cors": "^11.3.0",
+    "zod": "^4.6.5"
+  }
+}

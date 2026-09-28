@@ -1,0 +1,36 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../../packages/shared"
+    },
+    {
+      "path": "../../packages/contracts"
+    },
+    {
+      "path": "../../packages/observability"
+    },
+    {
+      "path": "../../packages/events"
+    },
+    {
+      "path": "../../packages/research-core"
+    },
+    {
+      "path": "../../packages/model-router"
+    },
+    {
+      "path": "../../packages/knowledge-graph"
+    },
+    {
+      "path": "../../packages/sdk"
+    }
+  ]
+}

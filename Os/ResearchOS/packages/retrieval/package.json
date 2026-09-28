@@ -1,0 +1,29 @@
+{
+  "name": "@research-os/retrieval",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hybrid lexical + semantic retrieval over evidence memory.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@research-os/shared": "*",
+    "@research-os/contracts": "*",
+    "@research-os/observability": "*",
+    "@research-os/persistence": "*",
+    "@research-os/model-router": "*"
+  }
+}

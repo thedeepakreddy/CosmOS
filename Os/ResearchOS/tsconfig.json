@@ -1,0 +1,72 @@
+{
+  "$comment": "Solution file. `tsc -b` walks these references in dependency order.",
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/shared"
+    },
+    {
+      "path": "./packages/contracts"
+    },
+    {
+      "path": "./packages/sdk"
+    },
+    {
+      "path": "./packages/observability"
+    },
+    {
+      "path": "./packages/events"
+    },
+    {
+      "path": "./packages/persistence"
+    },
+    {
+      "path": "./packages/model-router"
+    },
+    {
+      "path": "./packages/tools"
+    },
+    {
+      "path": "./packages/evidence"
+    },
+    {
+      "path": "./packages/knowledge-graph"
+    },
+    {
+      "path": "./packages/experiments"
+    },
+    {
+      "path": "./packages/claims"
+    },
+    {
+      "path": "./packages/memory"
+    },
+    {
+      "path": "./packages/retrieval"
+    },
+    {
+      "path": "./packages/ingestion"
+    },
+    {
+      "path": "./packages/executors"
+    },
+    {
+      "path": "./packages/verification"
+    },
+    {
+      "path": "./packages/evaluation"
+    },
+    {
+      "path": "./packages/orchestration"
+    },
+    {
+      "path": "./packages/research-core"
+    },
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./apps/worker"
+    }
+  ]
+}

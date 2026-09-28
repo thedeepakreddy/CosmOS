@@ -1,0 +1,8 @@
+{
+  "$comment": "Pinned external dependency versions, referenced by scripts/generate-workspaces.mjs. One place to bump a version for the whole monorepo.",
+  "zod": "^4.6.5",
+  "pg": "^8.23.0",
+  "fastify": "^5.12.4",
+  "@fastify/cors": "^11.3.0",
+  "@anthropic-ai/sdk": "^0.125.0"
+}

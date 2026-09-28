@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+*.db
+*.db-wal
+*.db-shm
+logs/
+tmp/
+artifacts/runtime/
+.DS_Store

@@ -1,0 +1,18 @@
+{
+  "name": "@research-os/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Durable task worker process.",
+  "main": "./dist/main.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@research-os/research-core": "*"
+  }
+}

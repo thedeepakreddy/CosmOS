@@ -1,0 +1,63 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../shared"
+    },
+    {
+      "path": "../contracts"
+    },
+    {
+      "path": "../observability"
+    },
+    {
+      "path": "../events"
+    },
+    {
+      "path": "../persistence"
+    },
+    {
+      "path": "../model-router"
+    },
+    {
+      "path": "../tools"
+    },
+    {
+      "path": "../memory"
+    },
+    {
+      "path": "../evidence"
+    },
+    {
+      "path": "../claims"
+    },
+    {
+      "path": "../verification"
+    },
+    {
+      "path": "../evaluation"
+    },
+    {
+      "path": "../ingestion"
+    },
+    {
+      "path": "../retrieval"
+    },
+    {
+      "path": "../executors"
+    },
+    {
+      "path": "../experiments"
+    },
+    {
+      "path": "../orchestration"
+    }
+  ]
+}

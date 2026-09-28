@@ -1,0 +1,46 @@
+{
+  "$comment": "Single source of truth for the ResearchOS module graph. scripts/generate-workspaces.mjs generates package manifests + tsconfig references from this file; scripts/lint-architecture.mjs enforces it. Adding a dependency here is a deliberate architectural act.",
+  "scope": "@research-os",
+  "layers": {
+    "0": "foundation      - no ResearchOS dependencies at all",
+    "1": "contracts       - schemas every boundary agrees on",
+    "2": "cross-cutting   - observability, events, client SDK",
+    "3": "ports+adapters  - replaceable infrastructure and pure domain primitives",
+    "4": "domain services - logic composed from layer 3",
+    "5": "engine          - orchestration and validation",
+    "6": "composition     - the research engine wiring everything",
+    "7": "applications    - deployable processes"
+  },
+  "packages": {
+    "shared":          { "layer": 0, "deps": [], "external": [], "description": "IDs, errors, Result, clock, config, retry, assertions." },
+    "contracts":       { "layer": 1, "deps": ["shared"], "external": ["zod"], "description": "Domain model, event, agent and API schemas. The stable surface every client codes against." },
+    "sdk":             { "layer": 2, "deps": ["shared", "contracts"], "external": ["zod"], "description": "TypeScript client for the ResearchOS API (REST + SSE)." },
+    "observability":   { "layer": 2, "deps": ["shared", "contracts"], "external": [], "description": "Structured logging, traces, metrics, token/cost accounting." },
+    "events":          { "layer": 2, "deps": ["shared", "contracts"], "external": [], "description": "Domain event bus port + in-memory adapter." },
+    "persistence":     { "layer": 3, "deps": ["shared", "contracts", "observability", "events"], "external": ["pg"], "description": "SQL dialects, migrations, repositories. SQLite + Postgres adapters." },
+    "model-router":    { "layer": 3, "deps": ["shared", "contracts", "observability"], "external": ["@anthropic-ai/sdk", "zod"], "description": "ModelProvider port, provider adapters, policy-driven router." },
+    "tools":           { "layer": 3, "deps": ["shared", "contracts", "observability"], "external": ["zod"], "description": "ResearchTool port, permission-aware registry, built-in tools." },
+    "evidence":        { "layer": 3, "deps": ["shared", "contracts"], "external": [], "description": "Source quality rubric, evidence strength, independence discounting." },
+    "knowledge-graph": { "layer": 3, "deps": ["shared", "contracts"], "external": [], "description": "Research graph store port, traversal, research tree projection." },
+    "experiments":     { "layer": 3, "deps": ["shared", "contracts"], "external": [], "description": "Experiment runner port and local process adapter." },
+    "claims":          { "layer": 4, "deps": ["shared", "contracts", "evidence"], "external": [], "description": "Claim aggregation, log-odds confidence, contradiction detection." },
+    "memory":          { "layer": 4, "deps": ["shared", "contracts", "persistence"], "external": [], "description": "MemoryProvider port (MemoryOS-compatible) + layered research memory." },
+    "retrieval":       { "layer": 4, "deps": ["shared", "contracts", "observability", "persistence", "model-router"], "external": [], "description": "Hybrid lexical + semantic retrieval over evidence memory." },
+    "ingestion":       { "layer": 4, "deps": ["shared", "contracts", "tools"], "external": [], "description": "Fetch, parse, normalise and chunk sources into evidence-ready documents." },
+    "executors":       { "layer": 4, "deps": ["shared", "contracts", "persistence", "tools"], "external": [], "description": "External executor protocol. How Echo attaches without code coupling." },
+    "verification":    { "layer": 5, "deps": ["shared", "contracts", "claims"], "external": [], "description": "Citation, arithmetic, consistency and reproducibility checks." },
+    "evaluation":      { "layer": 5, "deps": ["shared", "contracts"], "external": [], "description": "Rubric-scored assessment of a completed research project. Pure: no models, no I/O." },
+    "orchestration":   { "layer": 5, "deps": ["shared", "contracts", "events", "persistence", "observability"], "external": [], "description": "Durable task queue, leases, retries, budgets, resumable runs." },
+    "research-core":   { "layer": 6, "deps": ["shared", "contracts", "observability", "events", "persistence", "model-router", "tools", "memory", "evidence", "claims", "verification", "evaluation", "ingestion", "retrieval", "executors", "experiments", "orchestration"], "external": ["zod"], "description": "Agents, task handlers, debate engine, report builder." }
+  },
+  "apps": {
+    "api":    { "layer": 7, "deps": ["shared", "contracts", "observability", "events", "research-core", "model-router", "knowledge-graph", "sdk"], "external": ["fastify", "@fastify/cors", "zod"], "description": "HTTP API + SSE stream. The only network surface." },
+    "worker": { "layer": 7, "deps": ["research-core"], "external": [], "description": "Durable task worker process." }
+  },
+  "forbiddenIdentifiers": {
+    "$comment": "Product names must never leak into the reusable core. Echo and Aira are clients, not dependencies.",
+    "patterns": ["\\bEcho\\b", "\\bAira\\b"],
+    "appliesTo": ["shared", "contracts", "observability", "events", "persistence", "model-router", "tools", "evidence", "knowledge-graph", "experiments", "claims", "memory", "retrieval", "ingestion", "verification", "evaluation", "orchestration", "research-core"],
+    "allowInComments": true
+  }
+}

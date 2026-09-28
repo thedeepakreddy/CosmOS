@@ -1,0 +1,62 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+prod_server.log
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Compiled output
+dist/
+out/
+build/
+
+# Testing
+coverage/
+
+# Environment variables
+.env
+.env.test
+.env.production
+.env.local
+.env.*
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+
+# Secrets/Credentials
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Temporary files
+tmp/
+temp/
+*~
+*.swp
+*.swo

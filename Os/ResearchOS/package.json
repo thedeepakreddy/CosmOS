@@ -1,0 +1,41 @@
+{
+  "name": "research-os",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ResearchOS - a reusable AI research intelligence platform.",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/api",
+    "apps/worker"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "build:clean": "tsc -b --clean && tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
+    "lint": "eslint .",
+    "lint:arch": "node scripts/lint-architecture.mjs",
+    "test": "npm run build && node --test --test-reporter=spec \"packages/*/test/**/*.test.ts\" \"apps/*/test/**/*.test.ts\"",
+    "migrate": "node --import ./scripts/register.mjs scripts/migrate.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run lint:arch && npm run test",
+    "dev": "node --watch apps/api/dist/main.js",
+    "start:api": "node apps/api/dist/main.js",
+    "start:worker": "node apps/worker/dist/main.js",
+    "web": "node apps/web/server.mjs",
+    "demo": "npm run build && node --import ./scripts/register.mjs scripts/demo.mjs",
+    "demo:live": "npm run build && node --import ./scripts/register.mjs scripts/demo.mjs --live",
+    "demo:gemini": "npm run build && node --import ./scripts/register.mjs scripts/demo.mjs --gemini"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
+    "eslint": "^10.10.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.70.0"
+  }
+}

@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ResearchOS — Test UI</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+    --fg: #e6e9ef; --dim: #9aa3b2; --faint: #6b7483;
+    --accent: #6aa9ff; --ok: #4ec98a; --warn: #e0a83c; --bad: #e8686b; --blocked: #b48ce8;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7f9; --panel: #fff; --panel2: #f0f2f5; --line: #d9dee6;
+      --fg: #1a1d23; --dim: #5a6472; --faint: #858e9c;
+      --accent: #1f6feb; --ok: #1a7f4b; --warn: #9a6b00; --bad: #c0343a; --blocked: #7c4dbd;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 13px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { font-size: 14px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+  header h1 span { color: var(--faint); font-weight: 400; }
+  .spacer { flex: 1; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; border: 1px solid var(--line); background: var(--panel2);
+    white-space: nowrap;
+  }
+  .badge.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+  .badge.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+  .badge.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+  .badge.blocked { color: var(--blocked); border-color: color-mix(in srgb, var(--blocked) 40%, transparent); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 12px; padding: 12px; align-items: start; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; }
+  .card > h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .7px; color: var(--dim);
+    margin: 0; padding: 9px 12px; border-bottom: 1px solid var(--line); font-weight: 650;
+  }
+  .card > .body { padding: 12px; }
+
+  label { display: block; font-size: 11px; color: var(--dim); margin: 0 0 3px; font-weight: 600; }
+  input, textarea, select, button {
+    font: inherit; color: var(--fg); background: var(--panel2);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%;
+  }
+  textarea { resize: vertical; min-height: 54px; font-family: var(--mono); font-size: 12px; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: -1px; }
+  .field { margin-bottom: 9px; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+
+  button { cursor: pointer; font-weight: 600; width: auto; padding: 6px 12px; }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover:not(:disabled) { filter: brightness(1.1); color: #fff; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); padding: 0 8px; overflow-x: auto; }
+  .tabs button {
+    background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0;
+    color: var(--dim); padding: 8px 11px; font-size: 12px; white-space: nowrap;
+  }
+  .tabs button:hover { color: var(--fg); }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabs .count { color: var(--faint); font-weight: 400; }
+
+  .pane { padding: 12px; max-height: calc(100vh - 160px); overflow: auto; }
+  .empty { color: var(--faint); padding: 20px 4px; text-align: center; font-style: italic; }
+
+  .item { border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; margin-bottom: 7px; background: var(--panel2); }
+  .item h3 { margin: 0 0 4px; font-size: 12.5px; font-weight: 600; }
+  .meta { font-family: var(--mono); font-size: 11px; color: var(--faint); display: flex; gap: 10px; flex-wrap: wrap; }
+  .mono { font-family: var(--mono); font-size: 11.5px; }
+  .note {
+    border-left: 3px solid var(--warn); background: color-mix(in srgb, var(--warn) 9%, transparent);
+    padding: 8px 10px; border-radius: 0 5px 5px 0; margin-bottom: 9px; font-size: 12px;
+  }
+  .note.bad { border-left-color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, transparent); }
+  .note.blocked { border-left-color: var(--blocked); background: color-mix(in srgb, var(--blocked) 9%, transparent); }
+  .note.ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok) 9%, transparent); }
+  .note b { display: block; margin-bottom: 2px; }
+
+  ul.plain { margin: 4px 0 0; padding-left: 16px; color: var(--dim); font-size: 12px; }
+  ul.plain li { margin: 2px 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: var(--dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+  th, td { padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.mono { font-family: var(--mono); font-size: 11px; }
+
+  .ev { display: grid; grid-template-columns: 46px 1fr; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+  .ev .seq { font-family: var(--mono); color: var(--faint); text-align: right; font-size: 11px; }
+  .ev .type { font-family: var(--mono); font-weight: 600; }
+  .ev .payload { color: var(--dim); font-family: var(--mono); font-size: 11px; word-break: break-word; }
+  .ev.t-fail .type { color: var(--bad); }
+  .ev.t-done .type { color: var(--ok); }
+  .ev.t-block .type { color: var(--blocked); }
+
+  .bar { height: 5px; background: var(--panel2); border-radius: 3px; overflow: hidden; margin-top: 5px; }
+  .bar > i { display: block; height: 100%; background: var(--accent); }
+  .conf { font-family: var(--mono); font-weight: 700; }
+  details summary { cursor: pointer; color: var(--dim); font-size: 11.5px; }
+  pre { margin: 6px 0 0; padding: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 5px;
+        font-family: var(--mono); font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  a { color: var(--accent); }
+  #toast {
+    position: fixed; bottom: 14px; right: 14px; max-width: 460px; z-index: 50;
+    background: var(--panel); border: 1px solid var(--bad); color: var(--fg);
+    padding: 10px 12px; border-radius: 7px; font-size: 12px; display: none;
+    box-shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ResearchOS <span>test UI</span></h1>
+  <span id="b-api" class="badge"><i class="dot"></i><span>not connected</span></span>
+  <span id="b-model" class="badge"><i class="dot"></i><span>model: unknown</span></span>
+  <span id="b-gaps" class="badge"><span>gaps: —</span></span>
+  <div class="spacer"></div>
+  <span id="b-stream" class="badge"><i class="dot"></i><span>stream idle</span></span>
+</header>
+
+<main>
+  <div>
+    <div class="card">
+      <h2>Connection</h2>
+      <div class="body">
+        <div class="field">
+          <label for="apiUrl">API base URL</label>
+          <input id="apiUrl" spellcheck="false" placeholder="same origin (proxied)">
+          <div id="apiHint" style="font-size:11px;color:var(--faint);margin-top:4px"></div>
+        </div>
+        <div class="field">
+          <label for="apiKey">API key <span style="font-weight:400">(blank if the API is unauthenticated)</span></label>
+          <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Bearer token">
+        </div>
+        <div class="btns"><button id="connect" class="primary">Connect</button></div>
+        <div id="gapList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>New project</h2>
+      <div class="body">
+        <div class="field">
+          <label for="question">Research question</label>
+          <textarea id="question" placeholder="What does the evidence say about …?"></textarea>
+        </div>
+        <div class="field">
+          <label for="title">Title <span style="font-weight:400">(optional)</span></label>
+          <input id="title" placeholder="derived from the question if blank">
+        </div>
+        <div class="field">
+          <label for="urls">Source URLs — one per line</label>
+          <textarea id="urls" placeholder="https://example.org/paper&#10;https://example.org/another" spellcheck="false"></textarea>
+          <div style="font-size:11px;color:var(--faint);margin-top:4px">
+            ResearchOS ships no search tool, so discovery reports <b>BLOCKED</b> rather than
+            answering from model recollection. Supplying URLs is the supported way to give a run a corpus.
+          </div>
+        </div>
+        <div class="btns">
+          <button id="create" class="primary">Create</button>
+          <button id="createRun">Create &amp; run</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Project</h2>
+      <div class="body">
+        <div class="field">
+          <label for="projects">Select</label>
+          <select id="projects"><option value="">— none —</option></select>
+        </div>
+        <div id="projInfo"></div>
+        <div class="btns" style="margin-top:9px">
+          <button id="run" disabled>Run</button>
+          <button id="cancel" disabled>Cancel</button>
+          <button id="refresh" disabled>Refresh</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin:0">
+    <div class="tabs" id="tabs">
+      <button data-tab="stream" aria-selected="true">Stream <span class="count" id="c-stream"></span></button>
+      <button data-tab="tasks" aria-selected="false">Tasks <span class="count" id="c-tasks"></span></button>
+      <button data-tab="sources" aria-selected="false">Sources <span class="count" id="c-sources"></span></button>
+      <button data-tab="evidence" aria-selected="false">Evidence <span class="count" id="c-evidence"></span></button>
+      <button data-tab="claims" aria-selected="false">Claims <span class="count" id="c-claims"></span></button>
+      <button data-tab="report" aria-selected="false">Report</button>
+      <button data-tab="evaluation" aria-selected="false">Evaluation</button>
+      <button data-tab="health" aria-selected="false">Health</button>
+    </div>
+    <div class="pane" id="pane"><div class="empty">Connect to an API, then create a project.</div></div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const state = {
+  api: "", key: "", projectId: null, project: null, tab: "stream",
+  events: [], lastSequence: 0, abort: null,
+  data: { tasks: [], sources: [], evidence: [], claims: [], report: null, evaluation: null, health: null, caps: null },
+};
+
+/* ---------- transport ---------- */
+
+function headers() {
+  return { "content-type": "application/json", ...(state.key ? { authorization: `Bearer ${state.key}` } : {}) };
+}
+
+async function call(method, path, body) {
+  const response = await fetch(state.api + path, {
+    method, headers: headers(), ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const text = await response.text();
+  let payload;
+  try { payload = text ? JSON.parse(text) : undefined; } catch { payload = undefined; }
+  if (!response.ok) {
+    // The server's own code and message are surfaced verbatim. A UI that
+    // rewrites them hides exactly the thing a tester needs to see.
+    const error = payload?.error ?? {};
+    throw new Error(`${response.status} ${error.code ?? "error"}: ${error.message ?? text.slice(0, 300)}`);
+  }
+  return payload;
+}
+
+function toast(message) {
+  const el = $("toast");
+  el.textContent = message;
+  el.style.display = "block";
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { el.style.display = "none"; }, 9000);
+}
+
+const guard = (fn) => async (...args) => {
+  try { await fn(...args); } catch (error) { toast(error.message); }
+};
+
+/* ---------- health ---------- */
+
+function setBadge(id, cls, text) {
+  const el = $(id);
+  el.className = `badge ${cls}`;
+  el.querySelector("span").textContent = text;
+}
+
+async function loadHealth() {
+  // /health answers 503 when a capability is missing, which is not a transport
+  // failure — it is the honest answer. So the body is read either way.
+  const response = await fetch(state.api + "/health", { headers: headers() });
+  const health = await response.json();
+  state.data.health = health;
+
+  const caps = await call("GET", "/api/v1/capabilities");
+  state.data.caps = caps;
+
+  setBadge("b-api", health.status === "ok" ? "ok" : "warn", `API ${health.status}`);
+
+  const providers = [...new Set((caps.models ?? []).map((m) => m.provider))];
+  const live = providers.some((p) => p !== "unconfigured");
+  setBadge("b-model", live ? "ok" : "blocked",
+    live ? `model: ${providers.join(", ")}` : "model: UNCONFIGURED");
+  setBadge("b-gaps", (health.gaps?.length ?? 0) > 0 ? "warn" : "ok", `gaps: ${health.gaps?.length ?? 0}`);
+
+  $("gapList").innerHTML = live ? "" : `
+    <div class="note blocked" style="margin-top:10px">
+      <b>No model provider is configured.</b>
+      Research tasks will fail with the reason and its fix. This is ResearchOS behaving correctly,
+      not a UI error. To route to Claude, restart the API with <span class="mono">ANTHROPIC_API_KEY</span>
+      and <span class="mono">RESEARCH_OS_MODEL_PRICING</span> set.
+    </div>`;
+}
+
+/* ---------- projects ---------- */
+
+async function loadProjects() {
+  const page = await call("GET", "/api/v1/research/projects?limit=50");
+  const select = $("projects");
+  const current = state.projectId;
+  select.innerHTML = `<option value="">— none —</option>` +
+    page.items.map((p) => `<option value="${esc(p.id)}">${esc(p.title || p.originalQuestion)} · ${esc(p.status)}</option>`).join("");
+  if (current) select.value = current;
+}
+
+async function selectProject(id) {
+  stopStream();
+  state.projectId = id || null;
+  state.events = []; state.lastSequence = 0;
+  for (const key of ["tasks", "sources", "evidence", "claims"]) state.data[key] = [];
+  state.data.report = null; state.data.evaluation = null;
+
+  for (const b of ["run", "cancel", "refresh"]) $(b).disabled = !id;
+  if (!id) { $("projInfo").innerHTML = ""; render(); return; }
+
+  await refreshProject();
+  startStream();
+}
+
+async function refreshProject() {
+  if (!state.projectId) return;
+  const base = `/api/v1/research/projects/${state.projectId}`;
+  const [detail, tasks, sources, evidence, claims] = await Promise.all([
+    call("GET", base),
+    call("GET", `${base}/tasks`).catch(() => ({ items: [] })),
+    call("GET", `${base}/sources?limit=100`).catch(() => ({ items: [] })),
+    call("GET", `${base}/evidence?limit=100`).catch(() => ({ items: [] })),
+    call("GET", `${base}/claims?limit=100`).catch(() => ({ items: [] })),
+  ]);
+  state.project = detail;
+  state.data.tasks = tasks.items ?? [];
+  state.data.sources = sources.items ?? [];
+  state.data.evidence = evidence.items ?? [];
+  state.data.claims = claims.items ?? [];
+  // A report and an evaluation only exist once there is something to report on.
+  state.data.report = await call("GET", `${base}/report`).then((r) => r.report).catch(() => null);
+  state.data.evaluation = await call("GET", `${base}/evaluation`).then((r) => r.evaluation).catch(() => null);
+
+  renderProjectInfo();
+  render();
+}
+
+function renderProjectInfo() {
+  const detail = state.project;
+  if (!detail) return;
+  const p = detail.project;
+  const progress = detail.progress ?? {};
+  const total = progress.totalTasks ?? 0;
+  const done = progress.completedTasks ?? 0;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  $("projInfo").innerHTML = `
+    <div class="meta" style="margin-top:2px">
+      <span>${esc(p.id)}</span>
+    </div>
+    <div class="meta" style="margin-top:6px">
+      <span>status <b style="color:var(--fg)">${esc(p.status)}</b></span>
+      <span>tasks ${done}/${total}</span>
+      ${progress.failedTasks ? `<span style="color:var(--bad)">failed ${progress.failedTasks}</span>` : ""}
+    </div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    ${detail.plan ? `<details style="margin-top:8px"><summary>plan v${detail.plan.version} — ${detail.plan.steps.length} steps</summary>
+      <pre>${esc(detail.plan.summary)}</pre></details>` : ""}`;
+}
+
+/* ---------- event stream ---------- */
+
+function stopStream() {
+  state.abort?.abort();
+  state.abort = null;
+  setBadge("b-stream", "", "stream idle");
+}
+
+async function startStream() {
+  if (!state.projectId) return;
+  stopStream();
+  const controller = new AbortController();
+  state.abort = controller;
+  setBadge("b-stream", "ok", "streaming");
+
+  // fetch rather than EventSource: EventSource cannot send an Authorization
+  // header, so it would break the moment the API has a key configured.
+  const url = `${state.api}/api/v1/research/projects/${state.projectId}/events/stream?since=${state.lastSequence}`;
+  try {
+    const response = await fetch(url, {
+      headers: { ...headers(), accept: "text/event-stream" },
+      signal: controller.signal,
+    });
+    if (!response.ok || !response.body) throw new Error(`stream failed: HTTP ${response.status}`);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let split = buffer.indexOf("\n\n");
+      while (split !== -1) {
+        const frame = buffer.slice(0, split);
+        buffer = buffer.slice(split + 2);
+        const line = frame.split("\n").find((l) => l.startsWith("data: "));
+        if (line) onEvent(JSON.parse(line.slice(6)));
+        split = buffer.indexOf("\n\n");
+      }
+    }
+    setBadge("b-stream", "", "stream closed");
+  } catch (error) {
+    if (!controller.signal.aborted) {
+      setBadge("b-stream", "bad", "stream error");
+      toast(`Event stream: ${error.message}`);
+    }
+  }
+}
+
+let refreshTimer = null;
+function onEvent(event) {
+  state.events.push(event);
+  state.lastSequence = Math.max(state.lastSequence, event.sequence);
+  if (state.tab === "stream") render();
+  $("c-stream").textContent = state.events.length;
+
+  // Entities change as events arrive; refreshing on every one would hammer the
+  // API, so reloads are coalesced.
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => { void guard(refreshProject)(); }, 900);
+}
+
+/* ---------- rendering ---------- */
+
+const RENDERERS = {
+  stream() {
+    if (state.events.length === 0) return `<div class="empty">No events yet. Run the project to see them arrive live.</div>`;
+    return [...state.events].reverse().map((e) => {
+      const cls = /failed$/.test(e.type) ? "t-fail" : /completed$/.test(e.type) ? "t-done" : "";
+      const payload = Object.entries(e.payload ?? {})
+        .map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : v}`).join("  ");
+      return `<div class="ev ${cls}">
+        <div class="seq">${e.sequence}</div>
+        <div><div class="type">${esc(e.type)}</div><div class="payload">${esc(payload)}</div></div>
+      </div>`;
+    }).join("");
+  },
+
+  tasks() {
+    const tasks = state.data.tasks;
+    if (!tasks.length) return `<div class="empty">No tasks yet.</div>`;
+    const blocked = tasks.filter((t) => (t.errorMessage ?? "").startsWith("BLOCKED:"));
+    return (blocked.length ? `<div class="note blocked"><b>${blocked.length} task(s) BLOCKED</b>
+      A blocked task is a capability this deployment does not have. ResearchOS reports it rather than
+      inventing a result.</div>` : "") +
+      `<table><thead><tr><th>type</th><th>status</th><th>att</th><th>detail</th></tr></thead><tbody>` +
+      tasks.map((t) => `<tr>
+        <td class="mono">${esc(t.type)}</td>
+        <td><span class="badge ${t.status === "completed" ? "ok" : t.status === "failed" ? "bad" : t.status === "running" ? "warn" : ""}">${esc(t.status)}</span></td>
+        <td class="mono">${t.attempts ?? 0}</td>
+        <td class="mono" style="color:var(--dim)">${esc(t.errorMessage ?? "")}</td>
+      </tr>`).join("") + `</tbody></table>`;
+  },
+
+  sources() {
+    const sources = state.data.sources;
+    if (!sources.length) return `<div class="empty">No sources. Add URLs when creating a project, or paste them above.</div>`;
+    return sources.map((s) => `<div class="item">
+      <h3>${esc(s.title || "(untitled)")}</h3>
+      <div class="meta">
+        <span>${esc(s.sourceType)}</span><span>${esc(s.status)}</span>
+        ${s.qualityScore !== null && s.qualityScore !== undefined ? `<span>quality ${Number(s.qualityScore).toFixed(2)}</span>` : ""}
+      </div>
+      ${s.url ? `<div class="mono" style="margin-top:4px"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.url)}</a></div>` : ""}
+    </div>`).join("");
+  },
+
+  evidence() {
+    const evidence = state.data.evidence;
+    if (!evidence.length) return `<div class="empty">No evidence extracted yet.</div>`;
+    return evidence.map((e) => `<div class="item">
+      <div class="meta"><span>${esc(e.stance)}</span><span>relevance ${Number(e.relevance ?? 0).toFixed(2)}</span></div>
+      <div style="margin-top:5px">${esc(e.quotedText ?? e.summary ?? "")}</div>
+    </div>`).join("");
+  },
+
+  claims() {
+    const claims = state.data.claims;
+    if (!claims.length) return `<div class="empty">No claims yet.</div>`;
+    return claims.map((c) => {
+      const confidence = c.confidence === null || c.confidence === undefined ? null : Number(c.confidence);
+      const tone = confidence === null ? "" : confidence >= 0.7 ? "ok" : confidence >= 0.4 ? "warn" : "bad";
+      return `<div class="item">
+        <h3>${esc(c.statement)}</h3>
+        <div class="meta" style="margin-top:5px">
+          <span class="badge ${c.status === "insufficient_evidence" ? "warn" : c.status === "retracted" ? "bad" : ""}">${esc(c.status)}</span>
+          <span>${esc(c.claimType)}</span>
+          <span class="conf" style="color:var(--${tone || "faint"})">
+            ${confidence === null ? "confidence not computed" : `confidence ${confidence.toFixed(3)}`}</span>
+        </div>
+      </div>`;
+    }).join("");
+  },
+
+  report() {
+    const r = state.data.report;
+    if (!r) return `<div class="empty">No report yet. One is generated at the end of a run.</div>`;
+
+    const findings = r.keyFindings ?? [];
+    const citations = r.citations ?? [];
+    const stats = r.statistics ?? {};
+    const num = (v) => (v === null || v === undefined ? "—" : Number(v).toFixed(3));
+
+    const statRow = Object.entries(stats)
+      .map(([k, v]) => `<span>${esc(k.replace(/([A-Z])/g, " $1").toLowerCase())} <b style="color:var(--fg)">${esc(v)}</b></span>`)
+      .join("");
+
+    return `
+      <div class="item">
+        <h3>${esc(r.title ?? "Report")}</h3>
+        <div class="meta"><span>v${r.version}</span>
+          <span>overall confidence ${num(r.overallConfidence)}</span>
+          <span>${findings.length} finding(s)</span><span>${citations.length} citation(s)</span></div>
+        <div class="meta" style="margin-top:6px">${statRow}</div>
+      </div>
+
+      ${r.originalQuestion ? `<div class="item"><h3>Question</h3><div>${esc(r.originalQuestion)}</div></div>` : ""}
+
+      ${r.executiveSummary ? `<div class="item"><h3>Executive summary</h3>
+        <div style="white-space:pre-wrap">${esc(r.executiveSummary)}</div></div>` : ""}
+
+      ${r.methodology ? `<div class="item"><h3>Methodology</h3>
+        <div style="white-space:pre-wrap;color:var(--dim)">${esc(r.methodology)}</div></div>` : ""}
+
+      ${(r.sections ?? []).map((sec) => `<div class="item"><h3>${esc(sec.heading)}</h3>
+        <div style="white-space:pre-wrap">${esc(sec.body)}</div></div>`).join("")}
+
+      <h3 style="margin:14px 0 6px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px">Key findings</h3>
+      ${findings.length === 0 ? `<div class="empty">none</div>` : findings.map((f) => `
+        <div class="item">
+          <h3>${esc(f.statement)}</h3>
+          <div class="meta" style="margin-top:5px">
+            <span class="conf">confidence ${num(f.confidence)}</span>
+            <span>supporting ${f.supportingSources ?? 0}</span>
+            <span>contradicting ${f.contradictingSources ?? 0}</span>
+            ${f.replicatedExperiments ? `<span>replicated ${f.replicatedExperiments}</span>` : ""}
+            ${(f.citationMarkers ?? []).length ? `<span>${(f.citationMarkers ?? []).map(esc).join(" ")}</span>` : ""}
+          </div>
+          ${(f.majorUncertainties ?? []).length ? `<div class="note bad" style="margin-top:7px"><b>Uncertainties</b>
+            <ul class="plain">${f.majorUncertainties.map((u) => `<li>${esc(u)}</li>`).join("")}</ul></div>` : ""}
+          ${f.confidence === null || f.confidence === undefined || Number(f.confidence) === 0
+            ? `<div class="note" style="margin-top:7px"><b>No computed confidence</b>
+                This finding's claim was never scored, so ResearchOS reports 0 rather than guessing.
+                A plan that includes claim.score and verification.run produces a real number.</div>` : ""}
+        </div>`).join("")}
+
+      ${r.confidenceRationale ? `<div class="note" style="margin-top:10px"><b>How that confidence was arrived at</b>
+        ${esc(r.confidenceRationale)}</div>` : ""}
+
+      ${citations.length ? `<div class="item"><h3>Citations</h3>
+        <ul class="plain">${citations.map((c) => `<li>${esc(c.marker ?? "")} ${esc(c.formatted ?? "")}
+          ${c.url ? ` — <a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">link</a>` : ""}
+          ${c.accessedAt ? `<span style="color:var(--faint)"> (accessed ${esc(String(c.accessedAt).slice(0, 10))})</span>` : ""}</li>`).join("")}</ul>
+      </div>` : ""}
+
+      ${(r.contradictions ?? []).length ? `<div class="note bad"><b>Contradictions carried into the report</b>
+        <ul class="plain">${r.contradictions.map((c) => `<li>${esc(typeof c === "string" ? c : JSON.stringify(c))}</li>`).join("")}</ul></div>` : ""}
+
+      ${(r.unansweredQuestions ?? []).length ? `<div class="note"><b>Still unanswered</b>
+        <ul class="plain">${r.unansweredQuestions.map((q) => `<li>${esc(typeof q === "string" ? q : q.text ?? JSON.stringify(q))}</li>`).join("")}</ul></div>` : ""}
+
+      ${(r.recommendedNextResearch ?? []).length ? `<div class="note ok"><b>Recommended next research</b>
+        <ul class="plain">${r.recommendedNextResearch.map((x) => `<li>${esc(typeof x === "string" ? x : JSON.stringify(x))}</li>`).join("")}</ul></div>` : ""}
+
+      ${(r.limitations ?? []).length ? `<div class="note"><b>Limitations recorded by the run</b>
+        <ul class="plain">${r.limitations.map((l) => `<li>${esc(l)}</li>`).join("")}</ul></div>` : ""}`;
+  },
+
+  evaluation() {
+    const evaluation = state.data.evaluation;
+    if (!evaluation) return `<div class="empty">No evaluation yet.</div>`;
+    const blockers = evaluation.blockers ?? [];
+    return `<div class="item">
+        <h3>Grade: ${esc(evaluation.grade)}</h3>
+        <div class="meta"><span>overall ${Number(evaluation.overallScore ?? 0).toFixed(3)}</span>
+        <span>${(evaluation.dimensions ?? []).length} dimension(s)</span></div>
+      </div>
+      ${blockers.length ? `<div class="note bad"><b>Blockers — these invalidate the grade rather than lowering it</b>
+        <ul class="plain">${blockers.map((b) => `<li>${esc(b)}</li>`).join("")}</ul></div>` : ""}
+      <table><thead><tr><th>dimension</th><th>score</th><th>weight</th></tr></thead><tbody>
+      ${(evaluation.dimensions ?? []).map((d) => `<tr><td>${esc(d.dimension ?? d.name)}</td>
+        <td class="mono">${d.score === null ? "n/a" : Number(d.score).toFixed(3)}</td>
+        <td class="mono">${Number(d.weight ?? 0).toFixed(3)}</td></tr>`).join("")}
+      </tbody></table>
+      ${(evaluation.caveats ?? []).length ? `<div class="note" style="margin-top:10px"><b>Caveats that travel with every evaluation</b>
+        <ul class="plain">${evaluation.caveats.map((c) => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}`;
+  },
+
+  health() {
+    const health = state.data.health;
+    const caps = state.data.caps;
+    if (!health) return `<div class="empty">Not connected.</div>`;
+    return `<div class="item"><h3>status: ${esc(health.status)}</h3>
+        <div class="meta"><span>v${esc(health.version)}</span><span>uptime ${Math.round((health.uptimeMs ?? 0) / 1000)}s</span></div></div>
+      <table><thead><tr><th>check</th><th>status</th><th>detail</th></tr></thead><tbody>
+      ${Object.entries(health.checks ?? {}).map(([name, c]) => `<tr><td class="mono">${esc(name)}</td>
+        <td><span class="badge ${c.status === "ok" ? "ok" : "bad"}">${esc(c.status)}</span></td>
+        <td style="color:var(--dim)">${esc(c.detail ?? "")}</td></tr>`).join("")}
+      </tbody></table>
+      ${(health.gaps ?? []).length ? `<div class="note" style="margin-top:10px"><b>Capability gaps this deployment declares at startup</b>
+        <ul class="plain">${health.gaps.map((g) => `<li>${esc(g)}</li>`).join("")}</ul></div>` : ""}
+      ${caps ? `<div class="item" style="margin-top:10px"><h3>Registered</h3>
+        <div class="meta"><span>${caps.taskTypes.length} task types</span><span>${caps.tools.length} tool(s)</span><span>${caps.models.length} model(s)</span></div>
+        <ul class="plain">${caps.models.map((m) => `<li>${esc(m.provider)} / ${esc(m.id)}</li>`).join("")}</ul>
+        <ul class="plain">${caps.tools.map((t) => `<li>${esc(t.id)} — ${esc(t.capability)} (${esc(t.riskLevel)})</li>`).join("")}</ul>
+      </div>` : ""}`;
+  },
+};
+
+function render() {
+  $("pane").innerHTML = RENDERERS[state.tab]();
+  $("c-tasks").textContent = state.data.tasks.length || "";
+  $("c-sources").textContent = state.data.sources.length || "";
+  $("c-evidence").textContent = state.data.evidence.length || "";
+  $("c-claims").textContent = state.data.claims.length || "";
+  $("c-stream").textContent = state.events.length || "";
+}
+
+/* ---------- actions ---------- */
+
+async function createProject(andRun) {
+  const question = $("question").value.trim();
+  if (question.length < 3) throw new Error("A research question of at least 3 characters is required.");
+  const title = $("title").value.trim();
+  const urls = $("urls").value.split("\n").map((u) => u.trim()).filter(Boolean);
+
+  const created = await call("POST", "/api/v1/research/projects", {
+    question, ...(title ? { title } : {}), autoStart: false,
+    // Recorded on the project so the demo's `supplied_corpus` tool can answer
+    // discovery with them. Posting them to /evidence below still ingests them
+    // when no such tool is registered; a URL supplied twice is deduplicated.
+    ...(urls.length ? { metadata: { sourceUrls: urls } } : {}),
+  });
+  const id = created.project.id;
+
+  // Supplied URLs go through the same fetch-parse-chunk path as any other
+  // source, which is what makes a quotation checkable against its origin.
+  for (const url of urls) {
+    await call("POST", `/api/v1/research/projects/${id}/evidence`, { url });
+  }
+
+  await loadProjects();
+  $("projects").value = id;
+  await selectProject(id);
+  if (andRun) await startRun(id);
+}
+
+/**
+ * Starts a run, asking for a plan when the project has never had one.
+ *
+ * `POST /run` resumes instead of planning whenever the project already has
+ * runnable work — which is what makes an interrupted run continuable. But
+ * supplying source URLs *also* creates runnable work, so a brand-new project
+ * with sources trips that branch: the sources ingest, nothing plans them, and
+ * the project sits in `running` with no work left and no plan. `restart` is the
+ * documented opt-out, and "no plan yet" is exactly when it applies.
+ */
+async function startRun(projectId) {
+  const plan = state.project?.project.id === projectId ? state.project.plan : null;
+  await call("POST", `/api/v1/research/projects/${projectId}/run`, { restart: plan === null });
+  await refreshProject();
+}
+
+$("connect").addEventListener("click", guard(async () => {
+  state.api = $("apiUrl").value.trim().replace(/\/$/, "");
+  state.key = $("apiKey").value.trim();
+  localStorage.setItem("researchos.api.v2", state.api);
+  await loadHealth();
+  await loadProjects();
+  state.tab = "health";
+  for (const b of $("tabs").children) b.setAttribute("aria-selected", String(b.dataset.tab === "health"));
+  render();
+}));
+
+$("create").addEventListener("click", guard(() => createProject(false)));
+$("createRun").addEventListener("click", guard(() => createProject(true)));
+$("projects").addEventListener("change", guard((e) => selectProject(e.target.value)));
+$("refresh").addEventListener("click", guard(refreshProject));
+$("run").addEventListener("click", guard(() => startRun(state.projectId)));
+$("cancel").addEventListener("click", guard(async () => {
+  await call("POST", `/api/v1/research/projects/${state.projectId}/cancel`, { reason: "cancelled from the test UI" });
+  await refreshProject();
+}));
+
+$("tabs").addEventListener("click", (e) => {
+  const button = e.target.closest("button[data-tab]");
+  if (!button) return;
+  state.tab = button.dataset.tab;
+  for (const b of $("tabs").children) b.setAttribute("aria-selected", String(b === button));
+  render();
+});
+
+/* ---------- boot ---------- */
+
+const config = await fetch("/config.json").then((r) => r.json()).catch(() => ({ apiUrl: "", upstream: "unknown" }));
+
+/*
+ * Blank means "same origin", and same origin means the requests go through this
+ * server's proxy. That matters for more than convenience: the API's SSE route
+ * writes its own response headers and so never carries CORS headers, which makes
+ * a cross-origin event stream unreadable in a browser. Proxying avoids it.
+ */
+const stored = localStorage.getItem("researchos.api.v2");
+$("apiUrl").value = stored ?? config.apiUrl ?? "";
+$("apiHint").textContent = $("apiUrl").value
+  ? "Direct mode. The event stream needs same-origin: leave this blank to use the proxy."
+  : `Proxied through this server to ${config.upstream ?? "the API"}.`;
+render();
+</script>
+</body>
+</html>

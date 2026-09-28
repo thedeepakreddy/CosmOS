@@ -1,0 +1,29 @@
+{
+  "name": "@research-os/model-router",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ModelProvider port, provider adapters, policy-driven router.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@research-os/shared": "*",
+    "@research-os/contracts": "*",
+    "@research-os/observability": "*",
+    "@anthropic-ai/sdk": "^0.125.0",
+    "zod": "^4.6.5"
+  }
+}

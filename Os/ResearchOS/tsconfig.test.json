@@ -1,0 +1,19 @@
+{
+  "$comment": "Typechecks test files without emitting. Run after `tsc -b`.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "allowImportingTsExtensions": true,
+    "rootDir": "."
+  },
+  "include": [
+    "packages/*/test/**/*.ts",
+    "apps/*/test/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}

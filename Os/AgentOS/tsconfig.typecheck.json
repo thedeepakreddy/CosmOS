@@ -1,0 +1,18 @@
+{
+  // A7: the build config (tsconfig.json) intentionally compiles only `src`, so
+  // `npm run build` emits nothing for tests. That left test code completely
+  // unchecked -- vitest transpiles via esbuild, which strips types without
+  // checking them, so 14 genuine type errors sat in `tests/` unnoticed.
+  //
+  // This config type-checks src AND tests with the same strictness, emitting
+  // nothing. It is what `npm run typecheck` runs.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}

@@ -1,0 +1,603 @@
+<!-- AgentOS demo console. Served by examples/server.ts at http://localhost:4000 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentOS Console</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  /* Light is the base; dark is layered on top so an un-stamped document
+     (the "system" default) still resolves a complete palette. */
+  :root {
+    --ground:      #f4f6f8;
+    --surface:     #ffffff;
+    --surface-sunk:#eef1f4;
+    --border:      #d7dde4;
+    --border-soft: #e6ebef;
+    --ink:         #16202a;
+    --ink-muted:   #5d6b7a;
+    --ink-faint:   #8895a3;
+    --accent:      #0d7c74;
+    --accent-soft: #d9f0ee;
+    --running:     #a86a12;
+    --running-soft:#fbeed5;
+    --ok:          #1f7a44;
+    --ok-soft:     #d8f0e1;
+    --bad:         #b23b3b;
+    --bad-soft:    #fadede;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --radius: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0c1014;
+      --surface:     #141a21;
+      --surface-sunk:#0f151b;
+      --border:      #263039;
+      --border-soft: #1c242c;
+      --ink:         #dce3ea;
+      --ink-muted:   #8d9caa;
+      --ink-faint:   #667585;
+      --accent:      #3fd0c9;
+      --accent-soft: #0f2b2b;
+      --running:     #f0a53d;
+      --running-soft:#2e2312;
+      --ok:          #5ec87d;
+      --ok-soft:     #12281a;
+      --bad:         #f07575;
+      --bad-soft:    #2c1414;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #0c1014;
+    --surface:     #141a21;
+    --surface-sunk:#0f151b;
+    --border:      #263039;
+    --border-soft: #1c242c;
+    --ink:         #dce3ea;
+    --ink-muted:   #8d9caa;
+    --ink-faint:   #667585;
+    --accent:      #3fd0c9;
+    --accent-soft: #0f2b2b;
+    --running:     #f0a53d;
+    --running-soft:#2e2312;
+    --ok:          #5ec87d;
+    --ok-soft:     #12281a;
+    --bad:         #f07575;
+    --bad-soft:    #2c1414;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 14px/1.5 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  header h1 {
+    margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+  }
+  header h1 span { color: var(--accent); }
+  .subtitle { color: var(--ink-faint); font-size: 12.5px; }
+  .spacer { margin-left: auto; }
+  .provider {
+    font-family: var(--mono); font-size: 11.5px;
+    padding: 3px 8px; border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--ink-muted);
+  }
+  .provider.live { color: var(--running); border-color: var(--running); background: var(--running-soft); }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(320px, 400px) 1fr;
+    gap: 0;
+    align-items: start;
+  }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  .panel { padding: 18px 20px; }
+  .panel + .panel { border-left: 1px solid var(--border); }
+  @media (max-width: 900px) { .panel + .panel { border-left: 0; border-top: 1px solid var(--border); } }
+
+  h2 {
+    margin: 0 0 10px; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  section + section { margin-top: 22px; }
+
+  textarea, input[type="number"] {
+    width: 100%; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 11px; font: 13px/1.55 var(--mono); resize: vertical;
+  }
+  textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .budgets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .budgets label { display: block; font-size: 11.5px; color: var(--ink-muted); margin-bottom: 4px; }
+
+  .actions { display: flex; gap: 8px; margin-top: 12px; }
+  button {
+    font: 600 13px var(--sans); padding: 9px 16px; border-radius: var(--radius);
+    border: 1px solid transparent; cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: var(--ground); }
+  button.primary:hover:not(:disabled) { filter: brightness(1.08); }
+  button.ghost { background: transparent; color: var(--ink-muted); border-color: var(--border); }
+  button.ghost:hover:not(:disabled) { color: var(--bad); border-color: var(--bad); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ---- pipeline ---- */
+  .pipeline { display: flex; flex-direction: column; gap: 8px; }
+  .stage {
+    border: 1px solid var(--border); border-left: 3px solid var(--border-soft);
+    border-radius: var(--radius); padding: 10px 12px; background: var(--surface);
+    transition: border-color .15s;
+  }
+  .stage[data-state="RUNNING"]   { border-left-color: var(--running); }
+  .stage[data-state="SUCCEEDED"] { border-left-color: var(--ok); }
+  .stage[data-state="FAILED"]    { border-left-color: var(--bad); }
+  .stage[data-state="CANCELLED"] { border-left-color: var(--bad); }
+  .stage-head { display: flex; align-items: center; gap: 8px; }
+  .stage-name { font-weight: 600; font-size: 13px; }
+  .stage-role { color: var(--ink-faint); font-size: 11.5px; }
+  .stage-meta {
+    margin-top: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .stage-tools { margin-top: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+
+  .chip {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+    padding: 2px 7px; border-radius: 3px; letter-spacing: 0.03em;
+    background: var(--surface-sunk); color: var(--ink-muted); border: 1px solid var(--border-soft);
+  }
+  .chip[data-state="RUNNING"]   { background: var(--running-soft); color: var(--running); border-color: transparent; }
+  .chip[data-state="SUCCEEDED"] { background: var(--ok-soft);      color: var(--ok);      border-color: transparent; }
+  .chip[data-state="COMPLETED"] { background: var(--ok-soft);      color: var(--ok);      border-color: transparent; }
+  .chip[data-state="FAILED"]    { background: var(--bad-soft);     color: var(--bad);     border-color: transparent; }
+  .chip[data-state="CANCELLED"] { background: var(--bad-soft);     color: var(--bad);     border-color: transparent; }
+
+  /* ---- run header ---- */
+  .runbar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); font-family: var(--mono); font-size: 11.5px;
+    color: var(--ink-muted);
+  }
+  .runbar b { color: var(--ink); font-weight: 600; }
+
+  /* ---- stats ---- */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 1px;
+           background: var(--border-soft); border: 1px solid var(--border); border-radius: var(--radius);
+           overflow: hidden; }
+  .stat { background: var(--surface); padding: 9px 11px; }
+  .stat .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-faint); }
+  .stat .v { font-family: var(--mono); font-size: 16px; font-variant-numeric: tabular-nums; margin-top: 3px; }
+
+  /* ---- event stream ---- */
+  .stream {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface-sunk); max-height: 260px; overflow-y: auto;
+    font-family: var(--mono); font-size: 11.5px;
+  }
+  .ev { display: grid; grid-template-columns: 44px 150px 1fr; gap: 10px;
+        padding: 4px 11px; border-bottom: 1px solid var(--border-soft); }
+  .ev:last-child { border-bottom: 0; }
+  .ev .seq { color: var(--ink-faint); text-align: right; font-variant-numeric: tabular-nums; }
+  .ev .type { color: var(--accent); }
+  .ev .detail { color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev[data-kind="failed"] .type, .ev[data-kind="cancelled"] .type { color: var(--bad); }
+  .ev[data-kind="completed"] .type { color: var(--ok); }
+
+  /* ---- output ---- */
+  .output {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); padding: 14px 16px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.65;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .output.empty { color: var(--ink-faint); font-style: italic; }
+  .error-box {
+    border: 1px solid var(--bad); background: var(--bad-soft); color: var(--bad);
+    border-radius: var(--radius); padding: 10px 12px;
+    font-family: var(--mono); font-size: 12px; white-space: pre-wrap;
+  }
+
+  details.raw { margin-top: 10px; }
+  details.raw summary { cursor: pointer; font-size: 11.5px; color: var(--ink-faint); }
+  details.raw pre {
+    margin: 8px 0 0; padding: 11px; background: var(--surface-sunk);
+    border: 1px solid var(--border-soft); border-radius: var(--radius);
+    font-family: var(--mono); font-size: 11px; overflow-x: auto; color: var(--ink-muted);
+  }
+
+  .note {
+    font-size: 11.5px; color: var(--ink-faint); line-height: 1.5;
+    border-left: 2px solid var(--border); padding-left: 10px;
+  }
+</style>
+
+<header>
+  <h1>Agent<span>OS</span> Console</h1>
+  <span class="subtitle">submit a brief &mdash; watch three agents claim, run and hand off</span>
+  <span class="spacer"></span>
+  <span class="provider" id="provider">connecting&hellip;</span>
+</header>
+
+<main>
+  <!-- ------------------------------------------------ control ------------- -->
+  <div class="panel">
+    <section>
+      <h2>Brief</h2>
+      <textarea id="brief" rows="7">Our support team handled 1240 tickets last month, up from 980 the month before. Average first response took 4.5 hours against a 2 hour target. Summarise what changed and what it implies.</textarea>
+    </section>
+
+    <section>
+      <h2>Budget</h2>
+      <div class="budgets">
+        <div>
+          <label for="maxModelCalls">max model calls</label>
+          <input type="number" id="maxModelCalls" value="12" min="1">
+        </div>
+        <div>
+          <label for="maxToolCalls">max tool calls</label>
+          <input type="number" id="maxToolCalls" value="20" min="1">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="run">Run pipeline</button>
+        <button class="ghost" id="cancel" disabled>Cancel</button>
+      </div>
+      <p class="note" id="providerNote" style="margin-top:14px"></p>
+    </section>
+
+    <section>
+      <h2>Pipeline</h2>
+      <div class="pipeline" id="pipeline"></div>
+    </section>
+  </div>
+
+  <!-- ------------------------------------------------ telemetry ----------- -->
+  <div class="panel">
+    <section>
+      <h2>Run</h2>
+      <div class="runbar">
+        <span>run <b id="runId">&mdash;</b></span>
+        <span class="chip" id="runState" data-state="">IDLE</span>
+        <span>elapsed <b id="elapsed">0.0s</b></span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Accounting</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">model calls</div><div class="v" id="mModel">0</div></div>
+        <div class="stat"><div class="k">tool calls</div><div class="v" id="mTool">0</div></div>
+        <div class="stat"><div class="k">tokens</div><div class="v" id="mTokens">0</div></div>
+        <div class="stat"><div class="k">cost usd</div><div class="v" id="mCost">&mdash;</div></div>
+        <div class="stat"><div class="k">events</div><div class="v" id="mEvents">0</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Event stream <span style="text-transform:none;letter-spacing:0">(server-sent, resumable by seq)</span></h2>
+      <div class="stream" id="stream"></div>
+    </section>
+
+    <section>
+      <h2>Answer</h2>
+      <div id="answer" class="output empty">Run the pipeline to see the writer's output.</div>
+      <div id="failure" hidden class="error-box"></div>
+      <details class="raw">
+        <summary>Per-task output, ownership and attempts</summary>
+        <pre id="rawTasks">—</pre>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var TASKS = [
+    { id: 'research', agent: 'researcher', name: 'Research the brief',
+      description: 'Gather concrete evidence about the brief using tools.' },
+    { id: 'analyse',  agent: 'analyst',    name: 'Analyse the findings',
+      description: 'Evaluate the research and compute anything numeric.', dependsOn: 'research' },
+    { id: 'compose',  agent: 'writer',     name: 'Compose the answer',
+      description: 'Write the final answer from the research and analysis.', dependsOn: 'analyse' }
+  ];
+
+  var config = null;
+  var source = null;
+  var startedAt = 0;
+  var ticker = null;
+  var currentRunId = null;
+  var eventCount = 0;
+  var refreshTimer = null;
+
+  /**
+   * Collapse a burst of events into ONE refresh.
+   *
+   * The server pumps the SSE stream every 100ms, so a short run delivers all of
+   * its task events in a single batch. Refreshing per event turned a 3-task run
+   * into 14 requests inside 20ms -- wasteful, and at 300 req/min the rate
+   * limiter starts refusing after a dozen runs.
+   */
+  function scheduleRefresh() {
+    if (refreshTimer) return;
+    refreshTimer = setTimeout(function () {
+      refreshTimer = null;
+      refreshTasks();
+      refreshUsage();
+    }, 150);
+  }
+
+  // ---- pipeline rendering --------------------------------------------------
+  function renderPipeline(states) {
+    states = states || {};
+    var byId = {};
+    (config ? config.agents : []).forEach(function (a) { byId[a.id] = a; });
+
+    $('pipeline').innerHTML = TASKS.map(function (t) {
+      var agent = byId[t.agent] || { name: t.agent, role: '', tools: [] };
+      var st = states[t.id] || {};
+      var state = st.state || 'PENDING';
+      return '<div class="stage" data-state="' + state + '">'
+        + '<div class="stage-head">'
+        +   '<span class="stage-name">' + esc(agent.name) + '</span>'
+        +   '<span class="stage-role">' + esc(agent.role || '') + '</span>'
+        +   '<span class="spacer" style="margin-left:auto"></span>'
+        +   '<span class="chip" data-state="' + state + '">' + state + '</span>'
+        + '</div>'
+        + '<div class="stage-meta">'
+        +   '<span>task ' + esc(t.id) + '</span>'
+        +   (st.attempt !== undefined ? '<span>attempt ' + st.attempt + '</span>' : '')
+        +   (st.fence   !== undefined ? '<span>fence ' + st.fence + '</span>' : '')
+        + '</div>'
+        + '<div class="stage-tools">tools: ' + (agent.tools && agent.tools.length ? esc(agent.tools.join(', ')) : 'none granted') + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ---- lifecycle -----------------------------------------------------------
+  function setRunState(state) {
+    var el = $('runState');
+    el.textContent = state;
+    el.setAttribute('data-state', state);
+  }
+
+  function tick() {
+    $('elapsed').textContent = ((Date.now() - startedAt) / 1000).toFixed(1) + 's';
+  }
+
+  function reset() {
+    eventCount = 0;
+    $('stream').innerHTML = '';
+    $('mModel').textContent = '0';
+    $('mTool').textContent = '0';
+    $('mTokens').textContent = '0';
+    $('mCost').textContent = '—';
+    $('mEvents').textContent = '0';
+    $('answer').className = 'output empty';
+    $('answer').textContent = 'Running…';
+    $('failure').hidden = true;
+    $('rawTasks').textContent = '—';
+    renderPipeline({});
+  }
+
+  function appendEvent(evt) {
+    eventCount++;
+    $('mEvents').textContent = String(eventCount);
+    var kind = evt.type.split('.').pop();
+    var detail = '';
+    try {
+      var p = typeof evt.payload === 'string' ? JSON.parse(evt.payload) : (evt.payload || {});
+      detail = p.taskId ? 'task=' + p.taskId : '';
+      if (p.error) detail += (detail ? '  ' : '') + String(p.error).slice(0, 90);
+      if (p.state) detail += (detail ? '  ' : '') + p.state;
+    } catch (e) { /* payload shape varies by event type */ }
+
+    var row = document.createElement('div');
+    row.className = 'ev';
+    row.setAttribute('data-kind', kind);
+    row.innerHTML = '<span class="seq">' + evt.seq + '</span>'
+      + '<span class="type">' + esc(evt.type) + '</span>'
+      + '<span class="detail">' + esc(detail) + '</span>';
+    var s = $('stream');
+    s.appendChild(row);
+    s.scrollTop = s.scrollHeight;
+  }
+
+  async function refreshTasks() {
+    if (!currentRunId) return;
+    var res = await fetch('/v1/runs/' + currentRunId + '/tasks');
+    if (!res.ok) return;
+    var body = await res.json();
+    var states = {};
+    body.tasks.forEach(function (t) {
+      states[t.id] = { state: t.state, attempt: t.attempt, fence: t.fence };
+    });
+    renderPipeline(states);
+    $('rawTasks').textContent = JSON.stringify(body.tasks, null, 2);
+
+    var writer = body.tasks.filter(function (t) { return t.id === 'compose'; })[0];
+    if (writer && writer.state === 'SUCCEEDED' && writer.output) {
+      var out = writer.output;
+      var text = out && typeof out === 'object' && 'content' in out ? out.content : JSON.stringify(out, null, 2);
+      $('answer').className = 'output';
+      $('answer').textContent = text;
+    }
+    var failed = body.tasks.filter(function (t) { return t.state === 'FAILED'; });
+    if (failed.length) {
+      $('failure').hidden = false;
+      $('failure').textContent = failed.map(function (t) {
+        return t.id + ': ' + (t.error || 'failed');
+      }).join('\n');
+    }
+  }
+
+  async function refreshUsage() {
+    if (!currentRunId) return;
+    var res = await fetch('/v1/runs/' + currentRunId + '/usage');
+    if (!res.ok) return;
+    var body = await res.json();
+    var u = body.usage || body;   // the endpoint nests the record under `usage`
+    $('mModel').textContent  = String(u.modelCalls != null ? u.modelCalls : 0);
+    $('mTool').textContent   = String(u.toolCalls  != null ? u.toolCalls  : 0);
+    $('mTokens').textContent = String((u.inputTokens || 0) + (u.outputTokens || 0));
+    $('mCost').textContent   = u.costUsd ? Number(u.costUsd).toFixed(5) : '—';
+  }
+
+  function finish(state) {
+    setRunState(state);
+    clearInterval(ticker);
+    tick();
+    if (source) { source.close(); source = null; }
+    $('run').disabled = false;
+    $('cancel').disabled = true;
+    // Supersede any queued refresh: this is the authoritative final read.
+    if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+    refreshTasks();
+    refreshUsage();
+    if ($('answer').className.indexOf('empty') === -1) return;
+    if (state !== 'COMPLETED') {
+      $('answer').className = 'output empty';
+      $('answer').textContent = 'No answer produced — the run ended ' + state + '.';
+    }
+  }
+
+  // ---- submit --------------------------------------------------------------
+  async function submit() {
+    var brief = $('brief').value.trim();
+    if (!brief) { $('brief').focus(); return; }
+
+    $('run').disabled = true;
+    reset();
+    setRunState('CREATING');
+
+    var payload = {
+      goal: brief.slice(0, 200),
+      budget: {
+        maxModelCalls: Number($('maxModelCalls').value) || undefined,
+        maxToolCalls: Number($('maxToolCalls').value) || undefined
+      },
+      taskGraph: {
+        tasks: TASKS.map(function (t) {
+          return {
+            id: t.id,
+            name: t.name,
+            description: t.description,
+            agentDefinitionId: t.agent,
+            state: 'PENDING',
+            retriesAllowed: 0,
+            retriesAttempted: 0,
+            input: t.dependsOn ? { brief: brief } : { brief: brief }
+          };
+        }),
+        dependencies: TASKS.filter(function (t) { return t.dependsOn; })
+          .map(function (t) { return { taskId: t.id, dependsOn: t.dependsOn }; })
+      }
+    };
+
+    var res = await fetch('/v1/runs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var body = await res.json();
+    if (!res.ok) {
+      setRunState('REJECTED');
+      $('failure').hidden = false;
+      $('failure').textContent = JSON.stringify(body, null, 2);
+      $('run').disabled = false;
+      return;
+    }
+
+    currentRunId = body.id;
+    $('runId').textContent = currentRunId.slice(0, 8);
+    $('cancel').disabled = false;
+    startedAt = Date.now();
+    ticker = setInterval(tick, 100);
+
+    // Stream before starting, so no event is missed.
+    source = new EventSource('/v1/runs/' + currentRunId + '/events/stream');
+    source.onmessage = function () { /* typed events below */ };
+    source.onerror = function () { if (source) { source.close(); source = null; } };
+
+    ['run.created', 'run.started', 'task.ready', 'task.started', 'task.succeeded',
+     'task.failed', 'task.retrying', 'run.completed', 'run.failed', 'run.cancelled',
+     'agent.instance.created', 'message.sent'].forEach(function (type) {
+      source.addEventListener(type, function (e) {
+        var evt;
+        try { evt = JSON.parse(e.data); } catch (err) { return; }
+        appendEvent(evt);
+        if (type === 'task.started' || type === 'task.succeeded' || type === 'task.failed') {
+          scheduleRefresh();
+        }
+        if (type === 'run.completed') finish('COMPLETED');
+        if (type === 'run.failed') finish('FAILED');
+        if (type === 'run.cancelled') finish('CANCELLED');
+      });
+    });
+
+    setRunState('RUNNING');
+    await fetch('/v1/runs/' + currentRunId + '/start', { method: 'POST' });
+
+    // Safety net: if the stream drops, poll until the run is terminal.
+    var guard = setInterval(async function () {
+      if (!currentRunId) { clearInterval(guard); return; }
+      var r = await fetch('/v1/runs/' + currentRunId);
+      if (!r.ok) return;
+      var run = await r.json();
+      if (['COMPLETED', 'FAILED', 'CANCELLED'].indexOf(run.state) !== -1) {
+        clearInterval(guard);
+        finish(run.state);
+      }
+    }, 1500);
+  }
+
+  async function cancel() {
+    if (!currentRunId) return;
+    $('cancel').disabled = true;
+    await fetch('/v1/runs/' + currentRunId + '/cancel', { method: 'POST' });
+  }
+
+  // ---- boot ----------------------------------------------------------------
+  (async function boot() {
+    try {
+      var res = await fetch('/demo/config');
+      config = await res.json();
+      var p = $('provider');
+      p.textContent = config.live ? 'LIVE · ' + config.model : 'offline · ' + config.model;
+      p.className = 'provider' + (config.live ? ' live' : '');
+      $('providerNote').textContent = config.liveNote;
+    } catch (e) {
+      $('provider').textContent = 'server unreachable';
+    }
+    renderPipeline({});
+  })();
+
+  $('run').addEventListener('click', submit);
+  $('cancel').addEventListener('click', cancel);
+  $('brief').addEventListener('keydown', function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submit();
+  });
+})();
+</script>

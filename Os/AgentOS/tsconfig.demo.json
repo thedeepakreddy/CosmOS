@@ -1,0 +1,17 @@
+{
+  // The demo compiles SEPARATELY from the package.
+  //
+  // `tsconfig.json` builds only `src` into `dist`, and `npm run verify` is
+  // build + typecheck + lint + test + test:recovery over src and tests. None of
+  // those see `examples/`, so nothing here can affect a gate that has already
+  // been certified -- while `npm run demo` still type-checks the examples with
+  // the same strictness before running them.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist-demo",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["examples/**/*.ts", "src/**/*"]
+}
